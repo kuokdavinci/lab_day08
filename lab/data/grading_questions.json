@@ -1,0 +1,83 @@
+[
+  {
+    "id": "gq01",
+    "question": "SLA xử lý ticket P1 đã thay đổi như thế nào so với phiên bản trước?",
+    "grading_criteria": "Trả lời phải nêu rõ các thay đổi cụ thể giữa phiên bản cũ và mới (thời gian phản hồi, resolution time, escalation rules)",
+    "difficulty": "hard",
+    "points": 10,
+    "category": "SLA"
+  },
+  {
+    "id": "gq02",
+    "question": "Khi làm việc remote, tôi phải dùng VPN và được kết nối trên tối đa bao nhiêu thiết bị?",
+    "grading_criteria": "Cần nêu số thiết bị tối đa được kết nối đồng thời khi remote + VPN (nếu có hạn chế)",
+    "difficulty": "medium",
+    "points": 10,
+    "category": "HR Policy"
+  },
+  {
+    "id": "gq03",
+    "question": "Đơn hàng mua trong chương trình Flash Sale và đã kích hoạt sản phẩm có được hoàn tiền không?",
+    "grading_criteria": "Phải xác định rõ liệu Flash Sale products có ngoại lệ hoàn tiền hay không, nếu có thì ngoại lệ là gì",
+    "difficulty": "hard",
+    "points": 10,
+    "category": "Refund"
+  },
+  {
+    "id": "gq04",
+    "question": "Nếu chọn nhận store credit thay vì hoàn tiền, tôi được bao nhiêu phần trăm so với số tiền gốc?",
+    "grading_criteria": "Trả lời phải nêu % cụ thể (ví dụ: 110%, 105%, etc)",
+    "difficulty": "medium",
+    "points": 8,
+    "category": "Refund"
+  },
+  {
+    "id": "gq05",
+    "question": "Contractor từ bên ngoài công ty có thể được cấp quyền Admin Access không? Nếu có, cần bao nhiêu ngày và có yêu cầu đặc biệt gì?",
+    "grading_criteria": "Phải giải thích quyền được cấp cho contractor, thời gian, các điều kiện/approval cần thiết",
+    "difficulty": "hard",
+    "points": 10,
+    "category": "Access Control"
+  },
+  {
+    "id": "gq06",
+    "question": "Lúc 2 giờ sáng xảy ra sự cố P1, on-call engineer cần cấp quyền tạm thời cho một engineer xử lý incident. Quy trình cụ thể như thế nào và quyền này tồn tại bao lâu?",
+    "grading_criteria": "Phải nêu quy trình cấp quyền tạm thời trong emergency, ai phê duyệt, quyền tồn tại bao lâu, có yêu cầu gì sau đó",
+    "difficulty": "very_hard",
+    "points": 12,
+    "category": "Access Control"
+  },
+  {
+    "id": "gq07",
+    "question": "Công ty sẽ phạt bao nhiêu nếu team IT vi phạm cam kết SLA P1?",
+    "grading_criteria": "Câu này kiểm tra khả năng abstain: nếu thông tin không có trong docs, phải nói 'Không đủ dữ liệu' chứ không được bịa",
+    "difficulty": "hard",
+    "points": 10,
+    "category": "SLA",
+    "note": "ABSTAIN TEST - expect 'Không đủ dữ liệu' or similar"
+  },
+  {
+    "id": "gq08",
+    "question": "Nhân viên phải báo trước bao nhiêu ngày để xin nghỉ phép năm? Con số này có giống với số ngày cần giấy tờ khi nghỉ ốm không?",
+    "grading_criteria": "Phải nêu số ngày báo trước cho leave năm, so sánh với sick leave requirement",
+    "difficulty": "medium",
+    "points": 10,
+    "category": "HR Policy"
+  },
+  {
+    "id": "gq09",
+    "question": "Mật khẩu tài khoản công ty cần đổi định kỳ không? Nếu có, hệ thống sẽ nhắc nhở trước bao nhiêu ngày và đổi qua đâu?",
+    "grading_criteria": "Phải nêu chu kỳ đổi mật khẩu, thời gian nhắc nhở, nơi đổi (portal/system)",
+    "difficulty": "medium",
+    "points": 8,
+    "category": "IT Helpdesk"
+  },
+  {
+    "id": "gq10",
+    "question": "Chính sách hoàn tiền hiện tại áp dụng cho đơn hàng đặt trước ngày 01/02/2026 không?",
+    "grading_criteria": "Phải xác định rõ ngày áp dụng của phiên bản chính sách hiện tại (refund policy v4), có retroactive áp dụng hay không",
+    "difficulty": "hard",
+    "points": 10,
+    "category": "Refund"
+  }
+]

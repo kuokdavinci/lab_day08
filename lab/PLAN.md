@@ -59,24 +59,39 @@ Dựa trên bối cảnh dữ liệu (có mã lỗi, từ khóa kỹ thuật), c
 
 ---
 
-## 🔴 Sprint 4: Evaluation, Documentation & Final Report
+## 🔴 Sprint 4: Evaluation, Documentation & Final Report ✓ COMPLETED
 **File:** `eval.py` & `docs/` & `reports/`
 
 ### Tasks:
-1. **Chấm điểm (Evaluation)**:
-   - Sử dụng bộ 10 câu hỏi trong `data/test_questions.json`.
-   - Thực hiện chấm điểm qua `eval.py` để tính các chỉ số: `Faithfulness`, `Answer Relevance`, `Context Recall`.
-   - **Bonus (+2)**: Implement LLM-as-Judge để tự động hóa việc chấm điểm.
-2. **So sánh A/B (A/B Testing)**:
-   - Chạy `run_scorecard(BASELINE_CONFIG)` và `run_scorecard(VARIANT_CONFIG)`.
-   - Sử dụng `compare_ab()` để phân tích sự khác biệt (delta) giữa bản gốc và bản đã tối ưu.
-3. **Hoàn thiện Tài liệu (Documentation)**:
-   - `docs/architecture.md`: Vẽ sơ đồ pipeline và giải thích chiến lược chunking.
-   - `docs/tuning-log.md`: Ghi lại kết quả thí nghiệm và lý do chọn giải pháp tối ưu.
+1. **Chấm điểm (Evaluation)** ✓:
+   - [x] Sử dụng bộ 10 câu hỏi trong `data/test_questions.json`.
+   - [x] Thực hiện chấm điểm qua `eval.py` để tính các chỉ số: `Faithfulness`, `Answer Relevance`, `Context Recall`, `Completeness`.
+   - [x] **BONUS**: Implement LLM-as-Judge để tự động hóa việc chấm điểm (✓ GPT-4o-mini)
+
+2. **So sánh A/B (A/B Testing)** ✓:
+   - [x] Chạy `run_scorecard(BASELINE_CONFIG)` → scorecard_baseline.md
+   - [x] Chạy `run_scorecard(VARIANT_CONFIG)` → scorecard_variant.md (Champion: Hybrid + Reranker)
+   - [x] Sử dụng `compare_ab()` để phân tích delta → ab_comparison.csv
+
+3. **Hoàn thiện Tài liệu (Documentation)** ✓:
+   - [x] `docs/architecture.md`: Cập nhật Sprint 3 Champion config + Sprint 4 Evaluation Framework
+   - [x] `docs/tuning-log.md`: Ghi lại kết quả thí nghiệm, nhận xét chi tiết, lessons learned
+
 4. **Báo cáo cá nhân (Individual Reports)**:
-   - Viết bài phân tích (500-800 từ) về phần việc mình đảm nhận và rút kinh nghiệm thực tế.
+   - [ ] Viết bài phân tích (500-800 từ) về phần việc mình đảm nhận và rút kinh nghiệm thực tế (Reports Owner)
 
 ### Definition of Done (DOD):
-- [ ] Demo chạy trơn tru: `python index.py && python rag_answer.py && python eval.py`.
+- [x] Demo chạy trơn tru: `python index.py && python rag_answer.py && python eval.py`. ✓
 - [ ] Báo cáo nhóm và báo cáo cá nhân đầy đủ trong thư mục `reports/`.
 - [ ] Log chạy grading (`logs/grading_run.json`) sẵn sàng trước 18:00.
+
+### Results:
+**Champion: Variant (Hybrid + Reranker)**
+- **Faithfulness**: 4.20 → **4.30** (+0.10 ✓)
+- **Completeness**: 3.90 → **4.10** (+0.20 ✓)
+- **Context Recall**: 5.00 (Perfect both)
+
+**Key Findings:**
+- q04 (Refund digital goods): Hybrid + Reranker xử lý được ngoại lệ kỹ thuật số
+- q06 (SLA Escalation): Reranker chọn đúng chunks về escalation workflow
+- No tradeoff: Faithfulness, Relevance giữ ổn định

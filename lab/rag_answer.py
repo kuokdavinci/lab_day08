@@ -31,8 +31,8 @@ load_dotenv()
 # CẤU HÌNH
 # =============================================================================
 
-TOP_K_SEARCH = 15    # Nâng lên 15 để Reranker có dồi dào ứng viên
-TOP_K_SELECT = 5     # Nâng lên 5 để LLM có cái nhìn toàn cảnh nhất
+TOP_K_SEARCH = 20    # Tăng lên 20 để hybrid lấy từ cả 2+ documents
+TOP_K_SELECT = 8     # Tăng lên 8 để LLM có đầy đủ thông tin multi-concept
 
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
@@ -148,8 +148,8 @@ def retrieve_sparse(query: str, top_k: int = TOP_K_SEARCH) -> List[Dict[str, Any
 def retrieve_hybrid(
     query: str,
     top_k: int = TOP_K_SEARCH,
-    dense_weight: float = 0.6,
-    sparse_weight: float = 0.4,
+    dense_weight: float = 0.5,
+    sparse_weight: float = 0.5,
 ) -> List[Dict[str, Any]]:
     """
     Hybrid retrieval: kết hợp dense và sparse bằng Reciprocal Rank Fusion (RRF).
@@ -180,6 +180,9 @@ def retrieve_hybrid(
     sparse_results = retrieve_sparse(query, top_k=top_k * 2)
 
     # 2. Thuật toán RRF
+    # Note: Balanced weights (0.5/0.5) cho corpus lẫn lộn ngôn ngữ tự nhiên + keywords
+    # Dense tốt ở: multi-concept, semantic matching (ví dụ: "VPN requirement")
+    # Sparse tốt ở: exact keywords (ví dụ: "Cisco AnyConnect", "2 thiết bị")
     rrf_scores = {}
     doc_map = {}
 
@@ -332,13 +335,16 @@ def build_grounded_prompt(query: str, context_block: str) -> str:
     - Thêm ngôn ngữ phản hồi (tiếng Việt vs tiếng Anh)
     - Điều chỉnh tone phù hợp với use case (CS helpdesk, IT support)
     """
-    prompt = f"""Answer only from the retrieved context below.
-If the context is insufficient to answer the question, say you do not know and do not make up information.
-Cite the source field (in brackets like [1]) when possible.
-Keep your answer short, clear, and factual.
-Respond in the same language as the question.
-If the context contains error codes (like ERR-XXX) or step-by-step procedures, please list them clearly using bullet points.
-If there are multiple related documents, synthesize the information for a complete answer.
+    prompt = f"""Bạn là một Chuyên gia phân tích dữ liệu nội bộ cấp cao. Nhiệm vụ của bạn là cung cấp câu trả lời CHÍNH XÁC và ĐÁNG TIN CẬY dựa trên các tài liệu được cung cấp.
+
+Tuân thủ nghiêm ngặt các nguyên tắc sau:
+1. TÍNH CĂN CỨ (GROUNDEDNESS): Chỉ trả lời dựa trên nội dung trong phần 'Context'. KHÔNG sử dụng kiến thức bên ngoài hoặc tự bịa đặt thông tin.
+2. TỪ CHỐI AN TOÀN (ABSTAIN): Nếu Context không chứa đủ thông tin để trả lời, hãy nói: "Tôi xin lỗi, nhưng tôi không tìm thấy thông tin cụ thể về vấn đề này trong tài liệu hiện có."
+3. TRÍCH DẪN (CITATION): Mọi thông tin quan trọng PHẢI được trích dẫn nguồn ở cuối câu bằng số thứ tự trong ngoặc vuông, ví dụ [1], [2].
+4. CẤU TRÚC (STRUCTURE): 
+   - Sử dụng bullet points cho các danh sách (quy trình, mã lỗi, điều kiện).
+   - Nếu có sự thay đổi giữa các phiên bản (Version History), hãy liệt kê rõ ràng sự khác biệt.
+5. NGÔN NGỮ: Phản hồi bằng ngôn ngữ của câu hỏi (Tiếng Việt).
 
 Question: {query}
 
