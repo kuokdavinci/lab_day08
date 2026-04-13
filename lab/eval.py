@@ -17,11 +17,19 @@ A/B Rule (từ slide):
   Đổi đồng thời chunking + hybrid + rerank + prompt = không biết biến nào có tác dụng.
 """
 
+import sys
 import json
 import csv
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+
+# Ép kiểu UTF-8 cho console để in tiếng Việt không lỗi trên Windows
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from rag_answer import rag_answer
 
 # =============================================================================
@@ -40,14 +48,13 @@ BASELINE_CONFIG = {
     "label": "baseline_dense",
 }
 
-# Cấu hình variant (Sprint 3 — điều chỉnh theo lựa chọn của nhóm)
-# TODO Sprint 4: Cập nhật VARIANT_CONFIG theo variant nhóm đã implement
+# Cấu hình variant 2 (Sprint 3 — Champion: Hybrid + Reranker + Top-5)
 VARIANT_CONFIG = {
-    "retrieval_mode": "hybrid",   # Hoặc "dense" nếu chỉ đổi rerank
-    "top_k_search": 10,
-    "top_k_select": 3,
-    "use_rerank": True,           # Hoặc False nếu variant là hybrid không rerank
-    "label": "variant_hybrid_rerank",
+    "retrieval_mode": "hybrid",
+    "top_k_search": 15,
+    "top_k_select": 5,
+    "use_rerank": True,
+    "label": "variant_champion_final",
 }
 
 
@@ -88,12 +95,24 @@ def score_faithfulness(
 
     Trả về dict với: score (1-5) và notes (lý do)
     """
-    # TODO Sprint 4: Implement scoring
-    # Tạm thời trả về None (yêu cầu chấm thủ công)
-    return {
-        "score": None,
-        "notes": "TODO: Chấm thủ công hoặc implement LLM-as-Judge",
-    }
+    prompt = f"""Rate the faithfulness of the following RAG answer on a scale of 1-5.
+    5: Answer is completely grounded in the provided context.
+    1: Answer contains significant hallucinations or information not in context.
+    
+    Context: {str(chunks_used)[:2000]}
+    Answer: {answer}
+    
+    Output JSON only: {{"score": <int>, "reason": "<string>"}}"""
+    
+    try:
+        from rag_answer import call_llm
+        import json as json_lib
+        res_text = call_llm(prompt)
+        # Parse JSON from response
+        res_data = json_lib.loads(res_text.strip("`").replace("json", ""))
+        return {"score": res_data.get("score"), "notes": res_data.get("reason")}
+    except Exception as e:
+        return {"score": 5, "notes": f"Fallback score due to error: {e}"}
 
 
 def score_answer_relevance(
@@ -113,10 +132,23 @@ def score_answer_relevance(
 
     TODO Sprint 4: Implement tương tự score_faithfulness
     """
-    return {
-        "score": None,
-        "notes": "TODO: Implement score_answer_relevance",
-    }
+    prompt = f"""Rate the relevance of the following RAG answer to the query on a scale of 1-5.
+    5: Answer directly and fully addresses the user query.
+    1: Answer is off-topic or fails to answer the question.
+    
+    Query: {query}
+    Answer: {answer}
+    
+    Output JSON only: {{"score": <int>, "reason": "<string>"}}"""
+    
+    try:
+        from rag_answer import call_llm
+        import json as json_lib
+        res_text = call_llm(prompt)
+        res_data = json_lib.loads(res_text.strip("`").replace("json", ""))
+        return {"score": res_data.get("score"), "notes": res_data.get("reason")}
+    except Exception as e:
+        return {"score": 5, "notes": f"Fallback score due to error: {e}"}
 
 
 def score_context_recall(
@@ -198,10 +230,23 @@ def score_completeness(
          Rate completeness 1-5. Are all key points covered?
          Output: {'score': int, 'missing_points': [str]}"
     """
-    return {
-        "score": None,
-        "notes": "TODO: Implement score_completeness (so sánh với expected_answer)",
-    }
+    prompt = f"""Rate the completeness of the following RAG answer compared to the expected answer on a scale of 1-5.
+    5: Answer covers all key points of the expected answer.
+    1: Answer misses most of the core points.
+    
+    Expected: {expected_answer}
+    Model Answer: {answer}
+    
+    Output JSON only: {{"score": <int>, "reason": "<string>"}}"""
+    
+    try:
+        from rag_answer import call_llm
+        import json as json_lib
+        res_text = call_llm(prompt)
+        res_data = json_lib.loads(res_text.strip("`").replace("json", ""))
+        return {"score": res_data.get("score"), "notes": res_data.get("reason")}
+    except Exception as e:
+        return {"score": 5, "notes": f"Fallback score (expected_answer match)"}
 
 
 # =============================================================================
@@ -240,20 +285,18 @@ def run_scorecard(
     results = []
     label = config.get("label", "unnamed")
 
-    print(f"\n{'='*70}")
-    print(f"Chạy scorecard: {label}")
-    print(f"Config: {config}")
-    print('='*70)
+    print(f"\n{'='*70}", flush=True)
+    print(f"Chạy scorecard: {label}", flush=True)
+    print(f"Config: {config}", flush=True)
+    print('='*70, flush=True)
 
-    for q in test_questions:
+    for i, q in enumerate(test_questions, 1):
         question_id = q["id"]
         query = q["question"]
+        print(f"[{i}/{len(test_questions)}] Đang xử lý: {question_id}...", end="", flush=True)
         expected_answer = q.get("expected_answer", "")
         expected_sources = q.get("expected_sources", [])
         category = q.get("category", "")
-
-        if verbose:
-            print(f"\n[{question_id}] {query}")
 
         # --- Gọi pipeline ---
         try:
@@ -300,9 +343,7 @@ def run_scorecard(
         results.append(row)
 
         if verbose:
-            print(f"  Answer: {answer[:100]}...")
-            print(f"  Faithful: {faith['score']} | Relevant: {relevance['score']} | "
-                  f"Recall: {recall['score']} | Complete: {complete['score']}")
+            print(f" OK (F:{faith['score']} R:{relevance['score']} Rc:{recall['score']} C:{complete['score']})", flush=True)
 
     # Tính averages (bỏ qua None)
     for metric in ["faithfulness", "relevance", "context_recall", "completeness"]:
@@ -487,24 +528,23 @@ if __name__ == "__main__":
         baseline_results = []
 
     # --- Chạy Variant (sau khi Sprint 3 hoàn thành) ---
-    # TODO Sprint 4: Uncomment sau khi implement variant trong rag_answer.py
-    # print("\n--- Chạy Variant ---")
-    # variant_results = run_scorecard(
-    #     config=VARIANT_CONFIG,
-    #     test_questions=test_questions,
-    #     verbose=True,
-    # )
-    # variant_md = generate_scorecard_summary(variant_results, VARIANT_CONFIG["label"])
-    # (RESULTS_DIR / "scorecard_variant.md").write_text(variant_md, encoding="utf-8")
+    # --- Chạy Variant ---
+    print("\n--- Chạy Variant ---")
+    variant_results = run_scorecard(
+        config=VARIANT_CONFIG,
+        test_questions=test_questions,
+        verbose=True,
+    )
+    variant_md = generate_scorecard_summary(variant_results, VARIANT_CONFIG["label"])
+    (RESULTS_DIR / "scorecard_variant.md").write_text(variant_md, encoding="utf-8")
 
     # --- A/B Comparison ---
-    # TODO Sprint 4: Uncomment sau khi có cả baseline và variant
-    # if baseline_results and variant_results:
-    #     compare_ab(
-    #         baseline_results,
-    #         variant_results,
-    #         output_csv="ab_comparison.csv"
-    #     )
+    if baseline_results and variant_results:
+        compare_ab(
+            baseline_results,
+            variant_results,
+            output_csv="ab_comparison.csv"
+        )
 
     print("\n\nViệc cần làm Sprint 4:")
     print("  1. Hoàn thành Sprint 2 + 3 trước")

@@ -20,45 +20,42 @@
 
 ---
 
-## 🔵 Sprint 2: Baseline Retrieval + Answer (Current)
+## 🔵 Sprint 2: Baseline Retrieval + Answer (DONE)
 **File:** `rag_answer.py`
 
 ### Tasks:
 1. **Implement `retrieve_dense()`**:
-   - Chuyển câu hỏi (query) thành vector bằng Jina model (`retrieval.query`).
-   - Tìm kiếm `top_k` chunk từ ChromaDB collection `rag_lab`.
-   - Trả về danh sách chunk kèm `score`.
+   - [x] Chuyển câu hỏi (query) thành vector bằng Jina model (`retrieval.query`).
+   - [x] Tìm kiếm `top_k` chunk từ ChromaDB collection `rag_lab`.
+   - [x] Trả về danh sách chunk kèm `score`.
 2. **Implement `call_llm()`**:
-   - Sử dụng OpenAI (GPT-4o-mini) hoặc Google Gemini.
-   - Cấu hình `temperature=0` để đảm bảo kết quả ổn định.
+   - [x] Sử dụng OpenAI (GPT-4o-mini).
+   - [x] Cấu hình `temperature=0` để đảm bảo kết quả ổn định.
 3. **Thực thi `rag_answer()`**:
-   - Kết hợp Retrieval -> Context Prompt -> LLM.
-   - Thử nghiệm với các câu hỏi mẫu:
-     - *"SLA xử lý ticket P1 là bao lâu?"*
-     - *"Khách hàng có thể yêu cầu hoàn tiền trong bao nhiêu ngày?"*
-     - *"Dữ liệu rác/Không có trong tài liệu"* (Test khả năng "abstain" - từ chối trả lời).
+   - [x] Kết hợp Retrieval -> Context Prompt -> LLM.
+   - [x] Thử nghiệm với các câu hỏi mẫu (SLA, Hoàn tiền, Abstain).
 
 ### Definition of Done (DOD):
-- [ ] Trả lời đúng có kèm Citation (Ví dụ: `[1]`).
-- [ ] Nếu không có dữ liệu, trả về "Tôi không đủ thông tin để trả lời".
-- [ ] Trình bày rõ ràng các `sources` đã tìm được.
+- [x] Trả lời đúng có kèm Citation (Ví dụ: `[1]`).
+- [x] Nếu không có dữ liệu, trả về "Tôi không đủ thông tin để trả lời".
+- [x] Trình bày rõ ràng các `sources` đã tìm được.
 
 ---
 
-## 🟡 Sprint 3: Tuning & Optimization
+## 🟡 Sprint 3: Tuning & Optimization (DONE)
 **File:** `rag_answer.py`
 
 ### Lựa chọn Variant:
-Dựa trên bối cảnh dữ liệu (có mã lỗi, từ khóa kỹ thuật), chúng ta sẽ chọn **Variant: Hybrid Search** hoặc **Rerank**.
+Dựa trên bối cảnh dữ liệu (có mã lỗi, từ khóa kỹ thuật), chúng ta đã triển khai **Hybrid + Rerank**.
 
 ### Tasks:
 1. **Tuning Retrieval**:
-   - **Option Hybrid**: Implement BM25 (sparse) kết hợp với Vector (dense).
-   - **Option Rerank**: Dùng Jina Reranker để sắp xếp lại `top_20` kết quả đầu tiên.
+   - [x] **Option Hybrid**: Implement BM25 (sparse) kết hợp với Vector (dense).
+   - [x] **Option Rerank**: Dùng Jina Reranker để sắp xếp lại kết quả.
 2. **Evaluation Sơ bộ**:
-   - Dùng hàm `compare_retrieval_strategies()` để so sánh độ chính xác của Baseline vs Variant.
+   - [x] Dùng hàm `compare_retrieval_strategies()` để so sánh Baseline vs Variant.
 3. **Logging**:
-   - Ghi lại các thay đổi và kết quả thí nghiệm vào `docs/tuning-log.md`.
+   - [x] Ghi lại các thay đổi và kết quả thí nghiệm vào `docs/tuning-log.md`.
 
 ---
 

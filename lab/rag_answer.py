@@ -31,8 +31,8 @@ load_dotenv()
 # CẤU HÌNH
 # =============================================================================
 
-TOP_K_SEARCH = 10    # Số chunk lấy từ vector store trước rerank (search rộng)
-TOP_K_SELECT = 3     # Số chunk gửi vào prompt sau rerank/select (top-3 sweet spot)
+TOP_K_SEARCH = 15    # Nâng lên 15 để Reranker có dồi dào ứng viên
+TOP_K_SELECT = 5     # Nâng lên 5 để LLM có cái nhìn toàn cảnh nhất
 
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
@@ -337,6 +337,8 @@ If the context is insufficient to answer the question, say you do not know and d
 Cite the source field (in brackets like [1]) when possible.
 Keep your answer short, clear, and factual.
 Respond in the same language as the question.
+If the context contains error codes (like ERR-XXX) or step-by-step procedures, please list them clearly using bullet points.
+If there are multiple related documents, synthesize the information for a complete answer.
 
 Question: {query}
 
@@ -482,9 +484,9 @@ def compare_retrieval_strategies(query: str) -> None:
     print('='*60)
 
     strategies = [
-        {"name": "Dense (Baseline)", "retrieval_mode": "dense", "use_rerank": False},
-        {"name": "Hybrid (S3 Variant)", "retrieval_mode": "hybrid", "use_rerank": False},
-        {"name": "Dense + Rerank (S3 Variant)", "retrieval_mode": "dense", "use_rerank": True},
+        {"name": "1. Baseline (Dense)", "retrieval_mode": "dense", "use_rerank": False},
+        {"name": "2. Hybrid Only (BM25 + Vector)", "retrieval_mode": "hybrid", "use_rerank": False},
+        {"name": "3. Champion (Hybrid + Rerank)", "retrieval_mode": "hybrid", "use_rerank": True},
     ]
 
     for s in strategies:
