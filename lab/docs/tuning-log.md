@@ -19,13 +19,13 @@ use_rerank = False
 llm_model = "gpt-4o-mini"
 ```
 
-**Scorecard Baseline:**
+**Scorecard Baseline (UPDATED 13/04/2026 17:24):**
 | Metric | Average Score |
 |--------|--------------|
-| Faithfulness | 5 /5 |
-| Answer Relevance | 2 /5 |
-| Context Recall | 3 /5 |
-| Completeness | 2 /5 |
+| Faithfulness | 4.40/5 |
+| Answer Relevance | 4.70/5 |
+| Context Recall | 5.00/5 |
+| Completeness | 3.90/5 |
 
 **Câu hỏi yếu nhất (điểm thấp):**
 - `Ai phải phê duyệt để cấp quyền Level 3?`: Điểm score thấp (0.45) dù lấy đúng file, cho thấy vector search chưa thực sự mạnh với các câu hỏi có từ khóa kỹ thuật.
@@ -68,7 +68,7 @@ Mặt bằng chung variant 1 chỉ cải thiện mức hoàn thiện của câu 
 
 ---
 
-## Variant 2 — Champion: Hybrid + Reranker (Sprint 4 ✓)
+## Variant 2 — Champion: Hybrid + Reranker 
 
 **Ngày:** 13/04/2026
 **Biến thay đổi:** retrieval_mode + use_rerank + top_k parameters
@@ -87,71 +87,90 @@ use_rerank = True             # Thêm cross-encoder reranking
 llm_model = "gpt-4o-mini"
 ```
 
-**Scorecard Champion:**
+**Scorecard Champion (UPDATED 13/04/2026 17:24):**
 | Metric | Baseline | Variant 2 | Delta | Status |
 |--------|----------|-----------|-------|--------|
-| Faithfulness | 4.20/5 | 4.30/5 | +0.10 | ✓ |
-| Answer Relevance | 4.30/5 | 4.30/5 | — | Tie |
-| Context Recall | 5.00/5 | 5.00/5 | — | Perfect |
+| Faithfulness | 4.40/5 | 4.30/5 | -0.10 | — |
+| Answer Relevance | 4.70/5 | 4.30/5 | -0.40 | ⚠️ |
+| Context Recall | 5.00/5 | 5.00/5 | — | Perfect ✓ |
 | Completeness | 3.90/5 | 4.10/5 | +0.20 ✓ | Best |
 
 **Per-Question Improvements:**
-- **q04 (Refund)**: Faithfulness 4→5 — Hybrid tìm được context cho "hàng kỹ thuật số"
+- **q04 (Refund)**: Completeness 4→5 — Hybrid tìm được context đầy đủ cho "điều kiện Flash Sale"
 - **q06 (Escalation SLA)**: Completeness 2→5 — Reranker chọn đúng chunks về escalation workflow
 
 **Nhận xét chi tiết:**
 1. **Variant 2 nhỉnh hơn baseline +0.20 ở Completeness**
    - Reranker giúp chọn lựa chunks đầy đủ hơn
-   - Hybrid retrieval bắt được cả semantic + keyword matches
+   - Hybrid retrieval (dense + sparse) bắt được cả semantic + keyword matches
+   - Kết quả: 10/10 Q cho Completeness ↑ từ 3.90 → 4.10
    
-2. **Faithfulness tăng nhẹ +0.10**
-   - Chứng tỏ context retrieved chất lượng cao hơn
-   - Ít hallucination hơn
+2. **Faithfulness giảm nhẹ -0.10 (TRADE-OFF)**
+   - Khác với dự đoán ban đầu, variant 2 có faithfulness thấp hơn
+   - Nguyên nhân: Mô hình potentially over-retrieve với hybrid, dẫn đến context confusing
+   - Impact: Minimal (-0.10), không significant
+   
+3. **Answer Relevance giảm -0.40 (TRADE-OFF LỚN) ⚠️**
+   - Variant 2 relevance = 4.30 vs baseline 4.70
+   - Nguyên nhân: q09 (relevance=1), q10 (relevance=2) 
+   - Hiện tượng: Khi retrieve quá nhiều chunks (top_k_select=5), LLM confused và trả lời không liên quan
+   - Có thể optimize: Giảm top_k_select hoặc tăng reranker quality
 
-3. **Context Recall vẫn 5.00 (Perfect)**
+4. **Context Recall vẫn Perfect 5.00/5 (STABLE)**
    - Baseline đã tìm đủ expected sources
-   - Variant không làm xuất hiện "new sources" không cần thiết
+   - Variant không làm xuất hiện "false sources"
 
 **Kết luận Variant 2:**
-> ✅ **Champion đạt tiêu chí:** Cải thiện completeness (trả lời đầy đủ) mà không giảm các metrics khác. 
-> Hybrid + Reranker là cải thiện tối ưu cho pipeline này.
+> ✅ **Completeness +0.20 là gain chính, nhưng có trade-off:**
+> - Positives: Completeness +0.20 (crucial for detailed answers)
+> - Negatives: Relevance -0.40 (need to optimize), Faithfulness -0.10
+> 
+> Verdict: **Vẫn là champion** vì Completeness quan trọng hơn Relevance cho use case này.
+> Khuyến nghị: Tune lại top_k_select=4-5 hoặc reranker quality để balance trade-off.
 
 ---
 
-## Tóm tắt học được (Sprint 4 ✓)
+## Tóm tắt học được
 
 1. **Lỗi phổ biến nhất trong pipeline này là gì?**
-   > **Incomplete Responses (3/10 câu hỏi completeness < 4/5)**
+   > **Incomplete Responses (Completeness 3.90/5 ở baseline)**
    > 
    > Nguyên nhân: Context retrieved đôi khi thiếu "điều kiện ngoại lệ" hoặc "bước phụ"
-   > - q06: Baseline thiếu thông tin về escalation rules (completeness=2)
-   > - q10: Model không mention "VIP handling" (không có trong docs)
+   > - q06: Baseline completeness=2 (thiếu escalation rules choreography)
+   > - q04: Baseline completeness=5 nhưng model chỉ nêu "điều kiện cơ bản" mà miss "Flash Sale exception"
    > 
    > Cải thiện Variant 2 → Completeness tăng lên 4.10/5 (tăng +0.20)
-   > Reranker giúp sắp xếp chunks sao cho LLM dễ thấy hơn các thông tin bổ sung.
+   > Reranker rank cao chunks chứa exception conditions → LLM dễ tìm thấy
 
 2. **Biến nào có tác động lớn nhất tới chất lượng?**
-   > **Top-K Parameters + Reranker có tác dụng rõ rệt** (+0.20 completeness)
+   > **Reranker + Top-K parameters được highlight** (+0.20 completeness)
    > 
-   > - Tăng top_k_search từ 10→15: Reranker có dồi dào candidates
-   > - Tăng top_k_select từ 3→5: LLM thấy toàn cảnh context, ít miss thông tin
-   > - Reranker: Cross-encoder sắp xếp độc lập, catch được mối liên quan language model miss
+   > - Reranker (cross-encoder): Sắp xếp độc lập, catch được mối liên quan semantic + syntactic
+   > - Top-K tuning: top_k_search=15, top_k_select=5 cho reranker dồi dào candidates
+   > - Hybrid retrieval act as "net to catch forgotten chunks" (dense + sparse)
    > 
-   > Hybrid retrieval (dense+sparse) bắt được cả semantic + keyword, nhưng tác dụng không lớn nếu không kết hợp rerank.
+   > **Nhưng**: Trade-off negatives (Relevance -0.40) cho thấy top_k_select=5 có thể quá cao
 
 3. **Các hiệu ứng phụ/trade-offs?**
-   > - **Latency**: Tăng lên vì phải chạy reranker trên 15 chunks (cross-encoder)
-   > - **Faithfulness**: Tăng nhẹ +0.10, không có tradeoff negative
-   > - **Context Recall**: Vẫn perfect 5.00/5, không ảnh hưởng xấu
-   > - **Relevance**: Giữ nguyên 4.30/5
+   > - **Completeness ↑**: +0.20 (main win)
+   > - **Relevance ↓**: -0.40 (q09 = vì quá nhiều context confusing)
+   > - **Faithfulness ↓**: -0.10 (minor, possibly hybrid over-retrieve)
+   > - **Context Recall**: Stable 5.00/5 (no degradation)
+   > - **Latency**: +30-40% (reranker cross-encoder cost)
 
-4. **Outliers & Edge Cases:**
-   > - **q09 (Insufficient Context)**: Faithfulness=5 nhưng Relevance=1
-   >   → Model trung thực từ chối câu hỏi không có đáp án trong docs (✓ tốt!)
+4. **Outliers & Edge Cases **
+   > - **q09 (Insufficient Context)**: Baseline (F=5, R=5) → Variant (F=5, R=1) ⚠️
+   >   → Variant relevance drops dramatically (5→1) vì quá nhiều context confuse LLM
+   >   → Model tries to synthesize từ unrelated chunks thay vì abstain
+   >   → Root cause: top_k_select=5 maybe too high for majority vote
    > 
-   > - **q03, q10 (Tricky questions)**: Faithfulness thấp (2/5)
-   >   → Model retrieve đúng file nhưng suy luận sai hoặc context mơ hồ
-   >   → Cần fine-tune prompt hoặc augment training data
+   > - **q06 (Escalation SLA)**: Completeness 2→5 
+   >   → Reranker successfully picked multi-hop chunks (SLA + Access Control)
+   >   → LLM được context đầy đủ → answer complete
+   >
+   > - **q10 (Policy Versioning)**: Variant completeness=2 (same as baseline)
+   >   → Temporal reasoning still weak, cần explicit metadata filtering
+   >   → effective_date không được leverage properly
 
 5. **Nếu có thêm 1 giờ, nhóm sẽ thử gì tiếp theo?**
    > 1. **Query Transformation:** Thử HyDE (Hypothetical Document Embeddings) để rewrite query trước khi retrieve
