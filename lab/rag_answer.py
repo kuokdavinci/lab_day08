@@ -486,7 +486,7 @@ def compare_retrieval_strategies(query: str) -> None:
     for strategy in strategies:
         print(f"\n--- Strategy: {strategy} ---")
         try:
-            result = rag_answer(query, retrieval_mode=strategy, verbose=False)
+            result = rag_answer(query, retrieval_mode=strategy, verbose=True)
             print(f"Answer: {result['answer']}")
             print(f"Sources: {result['sources']}")
         except NotImplementedError as e:
