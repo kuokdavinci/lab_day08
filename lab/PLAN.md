@@ -1,5 +1,16 @@
 # Implementation Plan — RAG Pipeline Lab
 
+## 👥 Phân công nhiệm vụ (Roles)
+
+| Vai trò | Trách nhiệm chính | Sprint lead |
+|---------|------------------|------------|
+| **Tech Lead** | Giữ nhịp sprint, nối code end-to-end | 1, 2 |
+| **Retrieval Owner** | Chunking, metadata, retrieval strategy, rerank | 1, 3 |
+| **Eval Owner** | Test questions, expected evidence, scorecard, A/B | 3, 4 |
+| **Documentation Owner** | architecture.md, tuning-log, báo cáo nhóm | 4 |
+
+---
+
 ## 🟢 Sprint 1: Build Index (DONE)
 - [x] Implement `get_embedding()` using Jina AI API.
 - [x] Implement `build_index()` with ChromaDB.
