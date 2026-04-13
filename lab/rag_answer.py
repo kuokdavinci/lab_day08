@@ -76,10 +76,34 @@ def retrieve_dense(query: str, top_k: int = TOP_K_SEARCH) -> List[Dict[str, Any]
         # Lưu ý: distances trong ChromaDB cosine = 1 - similarity
         # Score = 1 - distance
     """
-    raise NotImplementedError(
-        "TODO Sprint 2: Implement retrieve_dense().\n"
-        "Tham khảo comment trong hàm để biết cách query ChromaDB."
+    import chromadb
+    from index import get_embedding, CHROMA_DB_DIR
+
+    client = chromadb.PersistentClient(path=str(CHROMA_DB_DIR))
+    collection = client.get_collection("rag_lab")
+
+    query_embedding = get_embedding(query)
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=top_k,
+        include=["documents", "metadatas", "distances"]
     )
+    
+    chunks = []
+    if results and "documents" in results and results["documents"]:
+        docs = results["documents"][0]
+        metas = results["metadatas"][0] if "metadatas" in results and results["metadatas"] else []
+        dists = results["distances"][0] if "distances" in results and results["distances"] else []
+        
+        for i in range(len(docs)):
+            chunk = {
+                "text": docs[i],
+                "metadata": metas[i] if i < len(metas) else {},
+                "score": 1.0 - dists[i] if i < len(dists) else 0.0
+            }
+            chunks.append(chunk)
+
+    return chunks
 
 
 # =============================================================================
@@ -274,18 +298,18 @@ def build_grounded_prompt(query: str, context_block: str) -> str:
     - Thêm ngôn ngữ phản hồi (tiếng Việt vs tiếng Anh)
     - Điều chỉnh tone phù hợp với use case (CS helpdesk, IT support)
     """
-    prompt = f"""Answer only from the retrieved context below.
-If the context is insufficient to answer the question, say you do not know and do not make up information.
-Cite the source field (in brackets like [1]) when possible.
-Keep your answer short, clear, and factual.
-Respond in the same language as the question.
+    prompt = f"""Chỉ trả lời dựa trên ngữ cảnh (context) được cung cấp dưới đây.
+Nếu thông tin trong ngữ cảnh không đủ để trả lời, hãy nói tôi không đủ dữ liệu để trả lời câu hỏi này và tuyệt đối không tự bịa thông tin.
+Hãy trích dẫn nguồn (trong dấu ngoặc vuông như [1]) khi có thể.
+Trả lời ngắn gọn, rõ ràng và đúng trọng tâm.
+Trả lời bằng cùng ngôn ngữ với câu hỏi.
 
-Question: {query}
+Câu hỏi: {query}
 
-Context:
+Ngữ cảnh:
 {context_block}
 
-Answer:"""
+Câu trả lời:"""
     return prompt
 
 
@@ -316,10 +340,30 @@ def call_llm(prompt: str) -> str:
 
     Lưu ý: Dùng temperature=0 hoặc thấp để output ổn định cho evaluation.
     """
-    raise NotImplementedError(
-        "TODO Sprint 2: Implement call_llm().\n"
-        "Chọn Option A (OpenAI) hoặc Option B (Gemini) trong TODO comment."
-    )
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key:
+        from openai import OpenAI
+        client = OpenAI(api_key=openai_key)
+        response = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            max_tokens=512,
+        )
+        return response.choices[0].message.content
+        
+    gemini_key = os.getenv("GOOGLE_API_KEY")
+    if gemini_key:
+        import google.generativeai as genai
+        genai.configure(api_key=gemini_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.GenerationConfig(temperature=0)
+        )
+        return response.text
+
+    raise ValueError("Chưa cấu hình OPENAI_API_KEY hoặc GOOGLE_API_KEY trong file .env")
 
 
 def rag_answer(
